@@ -1,3 +1,5 @@
+## MODIFIED VERSION FOR DISCORD ONLY AND SOME OTHER STUFF
+
 Standalone Eventwatcher written in NodeJs
 
 This will provide discord webhooks about new events collected by [ScrapeDuck](https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json)
