@@ -10,6 +10,7 @@ const NOTIFIED_EVENTS_FILE = './logs/notified_events.txt';
 const LOCAL_JSON_FILE = './events.json';
 const JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json';
 const checkInterval = parseInt(process.env.CHECK_INTERVAL) || 300000;
+const DISCORD_ROLE_ID = process.env.DISCORD_ROLE_ID; // Role ID from .env
 
 let notifiedEvents = new Set();
 
@@ -130,7 +131,7 @@ async function sendMessageWithEmbed(event) {
       url: event.image,
     },
     author: {
-      name: 'Pokébot',
+      name: 'Eventwatcher',
       icon_url: 'https://lh3.googleusercontent.com/Uzo_GQXZXc1Nsj7OY3dbfRDam0TjTzV4A1dhgSYLzkdrygVRDZgDMv7JME4kEAkS0UFa0MdJevzXynIlc7X6yXRSEV2-XkrRpX1QzJts9-a6=e365-s0',
     },
     color: 0xFF5733,
@@ -141,6 +142,7 @@ async function sendMessageWithEmbed(event) {
   }
 
   const payload = {
+    content: DISCORD_ROLE_ID ? `<@&${DISCORD_ROLE_ID}>` : '', // Tag the role if specified
     embeds: [embed],
   };
 
