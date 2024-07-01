@@ -1,15 +1,11 @@
 require('dotenv').config();
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const fs = require('fs');
-//const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const { WebhookClient } = require('discord.js');
-const TelegramBot = require('node-telegram-bot-api');
 
 const WEBHOOK_URL = process.env.WEBHOOK_URL.split(',');
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-const DESTINATION = process.env.DESTINATION || 'both'; // Default to 'both' if not provided
+const DESTINATION = process.env.DESTINATION || 'discord'; // Default to 'discord' if not provided
 const NOTIFIED_EVENTS_FILE = './logs/notified_events.txt';
 const LOCAL_JSON_FILE = './events.json';
 const JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json';
@@ -33,22 +29,14 @@ function saveNotifiedEvents() {
   fs.writeFileSync(NOTIFIED_EVENTS_FILE, data, 'utf8');
 }
 
-function sendToDiscord(WEBHOOK_URL,payload) {
-  WEBHOOK_URL.forEach((url) =>{
+function sendToDiscord(WEBHOOK_URL, payload) {
+  WEBHOOK_URL.forEach((url) => {
     const webhookClient = new WebhookClient({ url: url });
     webhookClient.send(payload)
       .catch((error) => {
         console.error('Error sending message to Discord:', error);
       });
   });
-}
-
-function sendToTelegram(message) {
-  const telegramBot = new TelegramBot(TELEGRAM_BOT_TOKEN);
-  telegramBot.sendMessage(TELEGRAM_CHAT_ID, message)
-    .catch((error) => {
-      console.error('Error sending message to Telegram:', error);
-    });
 }
 
 async function fetchEventData() {
@@ -62,7 +50,6 @@ async function fetchEventData() {
     return null;
   }
 }
-
 
 function getCurrentTime() {
   return new Date().getTime();
@@ -92,29 +79,17 @@ async function fetchDescriptionFromLink(link) {
   }
 }
 
-
 async function formatEventDescription(description) {
-  // Split the text into lines
   const lines = description.split('\n');
-  
-  // Initialize an empty result array to hold formatted lines
   const formattedLines = [];
 
-  // Initialize a stack to keep track of the current indentation level
-  //const indentStack = [];
-  
-  // Process each line
   for (let i = 0; i < lines.length; i++) {
     const currentLine = lines[i].trim();
     const indentation = lines[i].length - currentLine.length;
+    const nextLine = i < lines.length - 1 ? lines[i + 1].trim() : '';
 
-    // Check if next line is empty
-    const nextLine = i < lines.length -1 ? lines[i + 1].trim() : '';
-    
-    // Initialize bulletPoint
     let bulletPoint = '';
-    
-    // Add the current line with the appropriate bullet point
+
     if (indentation > 2) {
       bulletPoint = '* ';
       formattedLines.push(bulletPoint + currentLine);
@@ -125,12 +100,9 @@ async function formatEventDescription(description) {
     if (nextLine === '' && currentLine && i < lines.length - 1) {
       formattedLines.push('');
     }
-
   }
-  
-  // Join the formatted lines back together with line breaks
+
   const formattedDescription = formattedLines.join('\n');
-  
   return formattedDescription;
 }
 
@@ -144,27 +116,27 @@ async function sendMessageWithEmbed(event) {
 
   const bonusesText = bonusesArray.length > 0 ? bonusesArray.join('\n') : 'No bonuses available';
 
-    const embed = {
-      title: event.name,
-      url: event.link,
-      description: event.description,
-      fields: [
-        { name: 'Type', value: event.heading},
-        { name: 'Start Time', value: formatDate(event.start) },
-        { name: 'End Time', value: formatDate(event.end) },
-      ],
-      image: {
-        url: event.image,
-      },
-      author: {
-        name: 'Eventwatcher',
-        icon_url: 'https://lh3.googleusercontent.com/Uzo_GQXZXc1Nsj7OY3dbfRDam0TjTzV4A1dhgSYLzkdrygVRDZgDMv7JME4kEAkS0UFa0MdJevzXynIlc7X6yXRSEV2-XkrRpX1QzJts9-a6=e365-s0'
-      },
-      color: 0xFF5733,
-    };
+  const embed = {
+    title: event.name,
+    url: event.link,
+    description: event.description,
+    fields: [
+      { name: 'Type', value: event.heading },
+      { name: 'Start Time', value: formatDate(event.start) },
+      { name: 'End Time', value: formatDate(event.end) },
+    ],
+    image: {
+      url: event.image,
+    },
+    author: {
+      name: 'Eventwatcher',
+      icon_url: 'https://lh3.googleusercontent.com/Uzo_GQXZXc1Nsj7OY3dbfRDam0TjTzV4A1dhgSYLzkdrygVRDZgDMv7JME4kEAkS0UFa0MdJevzXynIlc7X6yXRSEV2-XkrRpX1QzJts9-a6=e365-s0',
+    },
+    color: 0xFF5733,
+  };
 
   if (bonusesText !== 'No bonuses available') {
-     embed.fields.push({ name: 'Bonuses', value: bonusesText });
+    embed.fields.push({ name: 'Bonuses', value: bonusesText });
   }
 
   const payload = {
@@ -172,18 +144,12 @@ async function sendMessageWithEmbed(event) {
   };
 
   console.log("Sending Event: %s", event.heading);
-  
-  const message = `**${event.name}**\n\nType: ${event.heading}\nStart Time: ${formatDate(event.start)}\nEnd Time: ${formatDate(event.end)}\n\n${event.description}\n\nBonuses:\n\n${bonusesText}\n\nImage:\n${event.image}`;
-    if (DESTINATION === 'discord') {
-      sendToDiscord(WEBHOOK_URL,payload);
-    } else if (DESTINATION === 'telegram') {
-      sendToTelegram(message);
-    } else if (DESTINATION === 'both') {
-      sendToDiscord(WEBHOOK_URL,payload);
-      sendToTelegram(message);
-    } else {
-      console.error('Invalid DESTINATION value in .env file. Please set it to "discord", "telegram", or "both".');
-    }
+
+  if (DESTINATION === 'discord') {
+    sendToDiscord(WEBHOOK_URL, payload);
+  } else {
+    console.error('Invalid DESTINATION value in .env file. Please set it to "discord".');
+  }
 }
 
 async function checkAndSendEvents() {
