@@ -131,8 +131,11 @@ async function sendMessageWithEmbed(event) {
       url: event.image,
     },
     author: {
-      name: 'Eventwatcher',
+      name: 'Pokémon Go',
       icon_url: 'https://lh3.googleusercontent.com/Uzo_GQXZXc1Nsj7OY3dbfRDam0TjTzV4A1dhgSYLzkdrygVRDZgDMv7JME4kEAkS0UFa0MdJevzXynIlc7X6yXRSEV2-XkrRpX1QzJts9-a6=e365-s0',
+    },
+    footer: {
+      text: 'Fetched from Leek Duck using ScrapedDuck',
     },
     color: 0xFF5733,
   };
