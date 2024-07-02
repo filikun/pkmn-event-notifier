@@ -183,23 +183,44 @@ async function sendEventNotification(event) {
 }
 
 async function sendRaidNotification(raidData) {
-    const tier1And3Raids = raidData.filter(raid => raid.tier === 'Tier 1' || raid.tier === 'Tier 3');
-    const tier5AndMegaRaids = raidData.filter(raid => raid.tier === 'Tier 5' || raid.tier === 'Mega');
+    const tier1Raids = raidData.filter(raid => raid.tier === 'Tier 1');
+    const tier3Raids = raidData.filter(raid => raid.tier === 'Tier 3');
+    const tier5Raids = raidData.filter(raid => raid.tier === 'Tier 5');
+    const megaRaids = raidData.filter(raid => raid.tier === 'Mega');
 
-    const tier1And3Message = tier1And3Raids.map(raid => `**${raid.name}** (Tier: ${raid.tier}, Shiny: ${raid.canBeShiny ? 'Yes' : 'No'})`).join('\n');
-    const tier5AndMegaMessage = tier5AndMegaRaids.map(raid => `
-        **${raid.name}**
-        Tier: ${raid.tier}
-        Shiny: ${raid.canBeShiny ? 'Yes' : 'No'}
-        Types: ${raid.types.map(type => type.name).join(', ')}
-        CP (Normal): ${raid.combatPower.normal.min} - ${raid.combatPower.normal.max}
-        CP (Boosted): ${raid.combatPower.boosted.min} - ${raid.combatPower.boosted.max}
-        Boosted Weather: ${raid.boostedWeather.map(weather => weather.name).join(', ')}
-        ![Image](${raid.image})
-    `).join('\n');
+    const formatTierRaids = (raids) => {
+        return raids.map(raid => `${raid.name}${raid.canBeShiny ? ' ✨' : ''}`).join('\n');
+    };
+
+    const formatDetailedRaids = (raids) => {
+        return raids.map(raid => `
+            **${raid.name}${raid.canBeShiny ? ' ✨' : ''}**
+            Types: ${raid.types.map(type => type.name).join(', ')}
+            CP (Normal): ${raid.combatPower.normal.min} - ${raid.combatPower.normal.max}
+            CP (Boosted): ${raid.combatPower.boosted.min} - ${raid.combatPower.boosted.max}
+            Boosted Weather: ${raid.boostedWeather.map(weather => weather.name).join(', ')}
+        `).join('\n\n');
+    };
+
+    const embed = {
+        title: 'New Raid Bosses',
+        fields: [
+            { name: '**Tier 1**', value: formatTierRaids(tier1Raids) || 'No Tier 1 raids', inline: false },
+            { name: '**Tier 3**', value: formatTierRaids(tier3Raids) || 'No Tier 3 raids', inline: false },
+            { name: '**Tier 5**', value: formatDetailedRaids(tier5Raids) || 'No Tier 5 raids', inline: false },
+            { name: '**Mega Raids**', value: formatDetailedRaids(megaRaids) || 'No Mega raids', inline: false },
+        ],
+        image: {
+            url: megaRaids.length > 0 ? megaRaids[0].image : '',
+        },
+        footer: {
+            text: 'Fetched from Leek Duck using ScrapedDuck',
+        },
+        color: 0xFF5733,
+    };
 
     const payload = {
-        content: `**Tier 1 and Tier 3 Raids**\n${tier1And3Message}\n\n**Tier 5 and Mega Raids**\n${tier5AndMegaMessage}`
+        embeds: [embed],
     };
 
     console.log("Sending Raid Notification");
