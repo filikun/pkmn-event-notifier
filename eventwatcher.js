@@ -27,7 +27,7 @@ function loadNotifiedEvents() {
     try {
         if (fs.existsSync(EVENT_NOTIFIED_FILE)) {
             const data = fs.readFileSync(EVENT_NOTIFIED_FILE, 'utf8');
-            notifiedEvents = new Set(data.trim().split('\\n'));
+            notifiedEvents = new Set(data.trim().split('\n'));
         }
     } catch (error) {
         console.error('Error loading notified events:', error);
@@ -35,7 +35,7 @@ function loadNotifiedEvents() {
 }
 
 function saveNotifiedEvents() {
-    const data = Array.from(notifiedEvents).join('\\n');
+    const data = Array.from(notifiedEvents).join('\n');
     fs.writeFileSync(EVENT_NOTIFIED_FILE, data, 'utf8');
 }
 
@@ -150,7 +150,7 @@ async function fetchDescriptionFromLink(link) {
 }
 
 async function formatEventDescription(description) {
-    const lines = description.split('\\n');
+    const lines = description.split('\n');
     const formattedLines = [];
 
     for (let i = 0; i < lines.length; i++) {
@@ -172,7 +172,7 @@ async function formatEventDescription(description) {
         }
     }
 
-    const formattedDescription = formattedLines.join('\\n');
+    const formattedDescription = formattedLines.join('\n');
     return formattedDescription;
 }
 
@@ -184,7 +184,7 @@ async function sendEventNotification(event) {
         }
     }
 
-    const bonusesText = bonusesArray.length > 0 ? bonusesArray.join('\\n') : 'No bonuses available';
+    const bonusesText = bonusesArray.length > 0 ? bonusesArray.join('\n') : 'No bonuses available';
 
     const embed = {
         title: event.name,
@@ -216,7 +216,7 @@ async function sendEventNotification(event) {
         embeds: [embed],
     };
 
-    console.log(`\${getCurrentFormattedTime()} Sending Event: \${event.heading}`);
+    console.log(`${getCurrentFormattedTime()} Sending Event: ${event.heading}`);
     sendToDiscord(EVENT_WEBHOOK_URL, payload);
 }
 
@@ -227,26 +227,26 @@ async function sendRaidNotification(raidData) {
     const megaRaids = raidData.filter(raid => raid.tier === 'Mega');
 
     const formatTierRaids = (raids) => {
-        return raids.map(raid => `\${raid.name}\${raid.canBeShiny ? ' ✨' : ''}`).join('\\n');
+        return raids.map(raid => `${raid.name}${raid.canBeShiny ? ' ✨' : ''}`).join('\n');
     };
 
     const formatDetailedRaids = (raids) => {
         return raids.map(raid => `
-            **\${raid.name}\${raid.canBeShiny ? ' ✨' : ''}**
-            Types: \${raid.types.map(type => type.name).join(', ')}
-            CP (Normal): \${raid.combatPower.normal.min} - \${raid.combatPower.normal.max}
-            CP (Boosted): \${raid.combatPower.boosted.min} - \${raid.combatPower.boosted.max}
-            Boosted Weather: \${raid.boostedWeather.map(weather => weather.name).join(', ')}
-        `).join('\\n\\n');
+            **${raid.name}${raid.canBeShiny ? ' ✨' : ''}**
+            Types: ${raid.types.map(type => type.name).join(', ')}
+            CP (Normal): ${raid.combatPower.normal.min} - ${raid.combatPower.normal.max}
+            CP (Boosted): ${raid.combatPower.boosted.min} - ${raid.combatPower.boosted.max}
+            Boosted Weather: ${raid.boostedWeather.map(weather => weather.name).join(', ')}
+        `).join('\n\n');
     };
 
     const embed = {
         title: 'New Raid Bosses',
         fields: [
-            { name: '**Tier 1**', value: formatTierRaids(tier1Raids) || 'No Tier 1 raids', inline: false },
-            { name: '**Tier 3**', value: formatTierRaids(tier3Raids) || 'No Tier 3 raids', inline: false },
-            { name: '**Tier 5**', value: formatDetailedRaids(tier5Raids) || 'No Tier 5 raids', inline: false },
-            { name: '**Mega Raids**', value: formatDetailedRaids(megaRaids) || 'No Mega raids', inline: false },
+            { name: '**Tier 1**', value: formatTierRaids(tier1Raids).slice(0, 1024) || 'No Tier 1 raids', inline: false },
+            { name: '**Tier 3**', value: formatTierRaids(tier3Raids).slice(0, 1024) || 'No Tier 3 raids', inline: false },
+            { name: '**Tier 5**', value: formatDetailedRaids(tier5Raids).slice(0, 1024) || 'No Tier 5 raids', inline: false },
+            { name: '**Mega Raids**', value: formatDetailedRaids(megaRaids).slice(0, 1024) || 'No Mega raids', inline: false },
         ],
         image: {
             url: megaRaids.length > 0 ? megaRaids[0].image : '',
@@ -261,7 +261,7 @@ async function sendRaidNotification(raidData) {
         embeds: [embed],
     };
 
-    console.log(`\${getCurrentFormattedTime()} Sending Raid Notification`);
+    console.log(`${getCurrentFormattedTime()} Sending Raid Notification`);
     sendToDiscord(RAID_WEBHOOK_URL, payload);
 }
 
@@ -273,13 +273,13 @@ async function sendEggNotification(eggData) {
     }, {});
 
     const formatEggs = (eggs) => {
-        return eggs.map(egg => `\${egg.name}\${egg.canBeShiny ? ' ✨' : ''}\${egg.isRegional ? ' 🌍' : ''} (CP \${egg.combatPower.min} - \${egg.combatPower.max})`).join('\\n');
+        return eggs.map(egg => `${egg.name}${egg.canBeShiny ? ' ✨' : ''}${egg.isRegional ? ' 🌍' : ''} (CP ${egg.combatPower.min} - ${egg.combatPower.max})`).join('\n');
     };
 
     const embedFields = Object.keys(eggsByType).map(type => {
         return {
             name: type,
-            value: formatEggs(eggsByType[type]) || `No ${type} eggs`,
+            value: formatEggs(eggsByType[type]).slice(0, 1024) || `No ${type} eggs`,
             inline: false
         };
     });
@@ -297,7 +297,7 @@ async function sendEggNotification(eggData) {
         embeds: [embed],
     };
 
-    console.log(`\${getCurrentFormattedTime()} Sending Egg Notification`);
+    console.log(`${getCurrentFormattedTime()} Sending Egg Notification`);
     sendToDiscord(EGG_WEBHOOK_URL, payload);
 }
 
@@ -310,7 +310,7 @@ function hasEggDataChanged(currentData, previousData) {
 }
 
 async function checkAndSendEvents() {
-    console.log(`\${getCurrentFormattedTime()} Checking for events...`);
+    console.log(`${getCurrentFormattedTime()} Checking for events...`);
     const eventData = await fetchEventData();
     if (!eventData) return;
 
@@ -331,32 +331,32 @@ async function checkAndSendEvents() {
 }
 
 async function checkAndNotifyRaids() {
-    console.log(`\${getCurrentFormattedTime()} Checking for raid data updates...`);
+    console.log(`${getCurrentFormattedTime()} Checking for raid data updates...`);
     const currentRaidData = await fetchRaidData();
     if (!currentRaidData) return;
 
     if (!hasRaidDataChanged(currentRaidData, previousRaidData)) {
-        console.log(`\${getCurrentFormattedTime()} No changes in raid data.`);
+        console.log(`${getCurrentFormattedTime()} No changes in raid data.`);
         return;
     }
 
-    console.log(`\${getCurrentFormattedTime()} Raid data has changed, sending notification...`);
+    console.log(`${getCurrentFormattedTime()} Raid data has changed, sending notification...`);
     saveRaidData(currentRaidData);
     previousRaidData = currentRaidData;
     await sendRaidNotification(currentRaidData);
 }
 
 async function checkAndNotifyEggs() {
-    console.log(`\${getCurrentFormattedTime()} Checking for egg data updates...`);
+    console.log(`${getCurrentFormattedTime()} Checking for egg data updates...`);
     const currentEggData = await fetchEggData();
     if (!currentEggData) return;
 
     if (!hasEggDataChanged(currentEggData, previousEggData)) {
-        console.log(`\${getCurrentFormattedTime()} No changes in egg data.`);
+        console.log(`${getCurrentFormattedTime()} No changes in egg data.`);
         return;
     }
 
-    console.log(`\${getCurrentFormattedTime()} Egg data has changed, sending notification...`);
+    console.log(`${getCurrentFormattedTime()} Egg data has changed, sending notification...`);
     saveEggData(currentEggData);
     previousEggData = currentEggData;
     await sendEggNotification(currentEggData);
