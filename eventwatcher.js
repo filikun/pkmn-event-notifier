@@ -7,16 +7,15 @@ const cheerio = require('cheerio');
 const EVENT_WEBHOOK_URL = process.env.EVENT_WEBHOOK_URL.split(',');
 const RAID_WEBHOOK_URL = process.env.RAID_WEBHOOK_URL.split(',');
 const EGG_WEBHOOK_URL = process.env.EGG_WEBHOOK_URL.split(',');
+const DISCORD_ROLE_ID = process.env.DISCORD_ROLE_ID ? `<@&${process.env.DISCORD_ROLE_ID}>` : '';
+
 const CHECK_INTERVAL = parseInt(process.env.CHECK_INTERVAL) || 300000;
 
 const EVENT_NOTIFIED_FILE = './logs/notified_events.txt';
-const EVENT_LOCAL_JSON_FILE = './events.json';
+const RAID_NOTIFIED_FILE = './logs/notified_raid.txt';
+const EGG_NOTIFIED_FILE = './logs/notified_egg.txt';
 const EVENT_JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json';
-
-const RAID_DATA_FILE = './raid_data.json';
 const RAID_JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/raids.json';
-
-const EGG_DATA_FILE = './egg_data.json';
 const EGG_JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/eggs.json';
 
 let notifiedEvents = new Set();
@@ -41,8 +40,8 @@ function saveNotifiedEvents() {
 
 function loadPreviousRaidData() {
     try {
-        if (fs.existsSync(RAID_DATA_FILE)) {
-            const data = fs.readFileSync(RAID_DATA_FILE, 'utf8');
+        if (fs.existsSync(RAID_NOTIFIED_FILE)) {
+            const data = fs.readFileSync(RAID_NOTIFIED_FILE, 'utf8');
             previousRaidData = JSON.parse(data);
         }
     } catch (error) {
@@ -51,13 +50,13 @@ function loadPreviousRaidData() {
 }
 
 function saveRaidData(data) {
-    fs.writeFileSync(RAID_DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+    fs.writeFileSync(RAID_NOTIFIED_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
 function loadPreviousEggData() {
     try {
-        if (fs.existsSync(EGG_DATA_FILE)) {
-            const data = fs.readFileSync(EGG_DATA_FILE, 'utf8');
+        if (fs.existsSync(EGG_NOTIFIED_FILE)) {
+            const data = fs.readFileSync(EGG_NOTIFIED_FILE, 'utf8');
             previousEggData = JSON.parse(data);
         }
     } catch (error) {
@@ -66,7 +65,7 @@ function loadPreviousEggData() {
 }
 
 function saveEggData(data) {
-    fs.writeFileSync(EGG_DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+    fs.writeFileSync(EGG_NOTIFIED_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
 function sendToDiscord(webhookUrls, payload) {
@@ -83,7 +82,6 @@ async function fetchEventData() {
     try {
         const response = await fetch(EVENT_JSON_URL);
         const remoteData = await response.json();
-        fs.writeFileSync(EVENT_LOCAL_JSON_FILE, JSON.stringify(remoteData, null, 2), 'utf8');
         return remoteData;
     } catch (error) {
         console.error('Error fetching event data:', error);
@@ -111,10 +109,6 @@ async function fetchEggData() {
         console.error('Error fetching egg data:', error);
         return null;
     }
-}
-
-function getCurrentTime() {
-    return new Date().getTime();
 }
 
 function getCurrentFormattedTime() {
@@ -213,6 +207,7 @@ async function sendEventNotification(event) {
     }
 
     const payload = {
+        content: DISCORD_ROLE_ID,
         embeds: [embed],
     };
 
@@ -258,6 +253,7 @@ async function sendRaidNotification(raidData) {
     };
 
     const payload = {
+        content: DISCORD_ROLE_ID,
         embeds: [embed],
     };
 
@@ -294,6 +290,7 @@ async function sendEggNotification(eggData) {
     };
 
     const payload = {
+        content: DISCORD_ROLE_ID,
         embeds: [embed],
     };
 
@@ -301,11 +298,7 @@ async function sendEggNotification(eggData) {
     sendToDiscord(EGG_WEBHOOK_URL, payload);
 }
 
-function hasRaidDataChanged(currentData, previousData) {
-    return JSON.stringify(currentData) !== JSON.stringify(previousData);
-}
-
-function hasEggDataChanged(currentData, previousData) {
+function hasDataChanged(currentData, previousData) {
     return JSON.stringify(currentData) !== JSON.stringify(previousData);
 }
 
@@ -314,7 +307,7 @@ async function checkAndSendEvents() {
     const eventData = await fetchEventData();
     if (!eventData) return;
 
-    const currentTime = getCurrentTime();
+    const currentTime = new Date().getTime();
     const currentHour = Math.floor(currentTime / CHECK_INTERVAL);
 
     for (const event of eventData) {
@@ -335,7 +328,7 @@ async function checkAndNotifyRaids() {
     const currentRaidData = await fetchRaidData();
     if (!currentRaidData) return;
 
-    if (!hasRaidDataChanged(currentRaidData, previousRaidData)) {
+    if (!hasDataChanged(currentRaidData, previousRaidData)) {
         console.log(`${getCurrentFormattedTime()} No changes in raid data.`);
         return;
     }
@@ -351,7 +344,7 @@ async function checkAndNotifyEggs() {
     const currentEggData = await fetchEggData();
     if (!currentEggData) return;
 
-    if (!hasEggDataChanged(currentEggData, previousEggData)) {
+    if (!hasDataChanged(currentEggData, previousEggData)) {
         console.log(`${getCurrentFormattedTime()} No changes in egg data.`);
         return;
     }
