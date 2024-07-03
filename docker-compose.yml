@@ -10,6 +10,7 @@ services:
       - EVENT_WEBHOOK_URL=<INSERT_EVENT_WEBHOOK_URLD>
       - RAID_WEBHOOK_URL=<INSERT_RAID_WEBHOOK_URL>
       - EGG_WEBHOOK_URL=<INSERT_EGG_WEBHOOK_URL>
+      - TIMEZONE=Europe/Stockholm
     restart: always    
     volumes:
       - /opt/pkmn-event-notifier/.env:/usr/src/app/.env
