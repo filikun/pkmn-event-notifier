@@ -6,11 +6,10 @@ services:
     container_name: pkmn-event-notifier
     environment:
       - DISCORD_ROLE_ID=<INSERT_ROLE_ID>
-      - CHECK_INTERVAL=300000  # Set interval in milliseconds (Default 5 min)
       - EVENT_WEBHOOK_URL=<INSERT_EVENT_WEBHOOK_URLD>
       - RAID_WEBHOOK_URL=<INSERT_RAID_WEBHOOK_URL>
       - EGG_WEBHOOK_URL=<INSERT_EGG_WEBHOOK_URL>
-      - TIMEZONE=Europe/Stockholm
+      - CRON_SCHEDULE=0 6-22 * * * #Default: every hour from 6:00 to 22:00
     restart: always    
     volumes:
       - /opt/pkmn-event-notifier/.env:/usr/src/app/.env
