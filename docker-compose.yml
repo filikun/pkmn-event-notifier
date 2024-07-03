@@ -1,10 +1,19 @@
 version: '3.5'
 services:
-  eventwatchter:
-    image: ghcr.io/acocalypso/eventwatcher-standalone:main
+  pkmn-event-notifier:
+    build:
+      context: https://github.com/<INSERT_GITHUB_USER>/pkmn-event-notifier.git#main
+    container_name: pkmn-event-notifier
+    environment:
+      - DISCORD_ROLE_ID=<INSERT_ROLE_ID>
+      - CHECK_INTERVAL=300000  # Set interval in milliseconds (Default 5 min)
+      - EVENT_WEBHOOK_URL=<INSERT_EVENT_WEBHOOK_URLD>
+      - RAID_WEBHOOK_URL=<INSERT_RAID_WEBHOOK_URL>
+      - EGG_WEBHOOK_URL=<INSERT_EGG_WEBHOOK_URL>
+    restart: always    
     volumes:
-      - ./.env:/usr/src/app/.env
+      - /opt/discordbot/.env:/usr/src/app/.env
       - /etc/localtime:/etc/localtime:ro
-      - ./logs/:/usr/src/app/logs
+      - /opt/discordbot/logs/:/usr/src/app/logs
     security_opt:
       - no-new-privileges:true
