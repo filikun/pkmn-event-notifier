@@ -3,11 +3,13 @@ const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fet
 const fs = require('fs');
 const { WebhookClient } = require('discord.js');
 const cheerio = require('cheerio');
+const moment = require('moment-timezone');
 
 const EVENT_WEBHOOK_URL = process.env.EVENT_WEBHOOK_URL.split(',');
 const RAID_WEBHOOK_URL = process.env.RAID_WEBHOOK_URL.split(',');
 const EGG_WEBHOOK_URL = process.env.EGG_WEBHOOK_URL.split(',');
 const DISCORD_ROLE_ID = process.env.DISCORD_ROLE_ID ? `<@&${process.env.DISCORD_ROLE_ID}>` : '';
+const TIMEZONE = process.env.TIMEZONE || 'UTC';
 
 const CHECK_INTERVAL = parseInt(process.env.CHECK_INTERVAL) || 300000;
 
@@ -112,21 +114,11 @@ async function fetchEggData() {
 }
 
 function getCurrentFormattedTime() {
-    return new Date().toLocaleTimeString('sv-SE', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    return moment().tz(TIMEZONE).format('HH:mm');
 }
 
 function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('sv-SE', {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'long',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    return moment(dateString).tz(TIMEZONE).format('ddd D MMM HH:mm');
 }
 
 async function fetchDescriptionFromLink(link) {
@@ -307,12 +299,19 @@ async function checkAndSendEvents() {
     const eventData = await fetchEventData();
     if (!eventData) return;
 
-    const currentTime = new Date().getTime();
-    const currentHour = Math.floor(currentTime / CHECK_INTERVAL);
+    const currentTime = moment().tz(TIMEZONE);
+    const currentHour = currentTime.hours();
 
     for (const event of eventData) {
-        const startHour = Math.floor(new Date(event.start).getTime() / CHECK_INTERVAL);
-        const endHour = Math.floor(new Date(event.end).getTime() / CHECK_INTERVAL);
+        const eventStartTime = moment(event.start).tz(TIMEZONE);
+        const eventEndTime = moment(event.end).tz(TIMEZONE);
+        const startHour = eventStartTime.hours();
+        const endHour = eventEndTime.hours();
+
+        console.log(`Checking event: ${event.name}`);
+        console.log(`Event Start: ${eventStartTime.format('ddd D MMM HH:mm')}`);
+        console.log(`Event End: ${eventEndTime.format('ddd D MMM HH:mm')}`);
+        console.log(`Current Time: ${currentTime.format('ddd D MMM HH:mm')}`);
 
         if (!notifiedEventIDs.has(event.eventID) && (startHour === currentHour || (startHour < currentHour && currentHour < endHour))) {
             notifiedEventIDs.add(event.eventID);
