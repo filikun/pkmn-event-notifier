@@ -43,10 +43,11 @@ function loadPreviousRaidData() {
     try {
         if (fs.existsSync(RAID_NOTIFIED_FILE)) {
             const data = fs.readFileSync(RAID_NOTIFIED_FILE, 'utf8');
-            previousRaidData = JSON.parse(data);
+            previousRaidData = JSON.parse(data) || [];
         }
     } catch (error) {
         console.error('Error loading previous raid data:', error);
+        previousRaidData = [];
     }
 }
 
@@ -58,10 +59,11 @@ function loadPreviousEggData() {
     try {
         if (fs.existsSync(EGG_NOTIFIED_FILE)) {
             const data = fs.readFileSync(EGG_NOTIFIED_FILE, 'utf8');
-            previousEggData = JSON.parse(data);
+            previousEggData = JSON.parse(data) || [];
         }
     } catch (error) {
         console.error('Error loading previous egg data:', error);
+        previousEggData = [];
     }
 }
 
@@ -218,33 +220,19 @@ async function sendRaidNotification(raidData) {
 
     const formatDetailedRaids = (raids) => {
         return raids.map(raid => `
-            **${raid.name}${raid.canBeShiny ? ' ✨' : ''}**
-            Types: ${raid.types.map(type => type.name).join(', ')}
-            CP (Normal): ${raid.combatPower.normal.min} - ${raid.combatPower.normal.max}
-            CP (Boosted): ${raid.combatPower.boosted.min} - ${raid.combatPower.boosted.max}
-            Boosted Weather: ${raid.boostedWeather.map(weather => weather.name).join(', ')}
-        `).join('\n\n');
-    };
-
-    const formatColumns = (col1, col2) => {
-        const maxRows = Math.max(col1.length, col2.length);
-        const rows = [];
-        for (let i = 0; i < maxRows; i++) {
-            const col1Item = col1[i] || '';
-            const col2Item = col2[i] || '';
-            rows.push(`${col1Item} ${col2Item}`);
-        }
-        return rows.join('\n');
+**${raid.name}${raid.canBeShiny ? ' ✨' : ''}**
+Types: ${raid.types.map(type => type.name).join(', ')}
+CP (Normal): ${raid.combatPower.normal.min} - ${raid.combatPower.normal.max}
+CP (Boosted): ${raid.combatPower.boosted.min} - ${raid.combatPower.boosted.max}
+Boosted Weather: ${raid.boostedWeather.map(weather => weather.name).join(', ')}
+`).join('\n\n');
     };
 
     const embed = {
         title: 'New Raid Bosses',
         fields: [
-            {
-                name: '**Tier 1** - **Tier 3**',
-                value: formatColumns(formatTierRaids(tier1Raids).split('\n'), formatTierRaids(tier3Raids).split('\n')).slice(0, 1024) || 'No Tier 1 or Tier 3 raids',
-                inline: false
-            },
+            { name: '**Tier 1**', value: formatTierRaids(tier1Raids).slice(0, 1024) || 'No Tier 1 raids', inline: false },
+            { name: '**Tier 3**', value: formatTierRaids(tier3Raids).slice(0, 1024) || 'No Tier 3 raids', inline: false },
             { name: '**Tier 5**', value: formatDetailedRaids(tier5Raids).slice(0, 1024) || 'No Tier 5 raids', inline: false },
             { name: '**Mega Raids**', value: formatDetailedRaids(megaRaids).slice(0, 1024) || 'No Mega raids', inline: false },
         ],
@@ -277,34 +265,13 @@ async function sendEggNotification(eggData) {
         return eggs.map(egg => `${egg.name}${egg.canBeShiny ? ' ✨' : ''}${egg.isRegional ? ' 🌍' : ''} (CP ${egg.combatPower.min} - ${egg.combatPower.max})`).join('\n');
     };
 
-    const formatColumns = (col1, col2) => {
-        const maxRows = Math.max(col1.length, col2.length);
-        const rows = [];
-        for (let i = 0; i < maxRows; i++) {
-            const col1Item = col1[i] || '';
-            const col2Item = col2[i] || '';
-            rows.push(`${col1Item} ${col2Item}`);
-        }
-        return rows.join('\n');
-    };
-
-    const embedFields = [
-        {
-            name: '**2km** - **5km**',
-            value: formatColumns(formatEggs(eggsByType['2 km'] || []).split('\n'), formatEggs(eggsByType['5 km'] || []).split('\n')).slice(0, 1024) || 'No 2km or 5km eggs',
+    const embedFields = Object.keys(eggsByType).map(type => {
+        return {
+            name: type,
+            value: formatEggs(eggsByType[type]).slice(0, 1024) || `No ${type} eggs`,
             inline: false
-        },
-        {
-            name: '**7km** - **10km**',
-            value: formatColumns(formatEggs(eggsByType['7 km'] || []).split('\n'), formatEggs(eggsByType['10 km'] || []).split('\n')).slice(0, 1024) || 'No 7km or 10km eggs',
-            inline: false
-        },
-        {
-            name: '**12km**',
-            value: formatEggs(eggsByType['12 km'] || []).slice(0, 1024) || 'No 12km eggs',
-            inline: false
-        }
-    ];
+        };
+    });
 
     const embed = {
         title: 'New Egg Pool',
