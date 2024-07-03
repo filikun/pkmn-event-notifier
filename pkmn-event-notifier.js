@@ -3,15 +3,14 @@ const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fet
 const fs = require('fs');
 const { WebhookClient } = require('discord.js');
 const cheerio = require('cheerio');
-const moment = require('moment-timezone');
+const cron = require('node-cron');
+const moment = require('moment');
 
 const EVENT_WEBHOOK_URL = process.env.EVENT_WEBHOOK_URL.split(',');
 const RAID_WEBHOOK_URL = process.env.RAID_WEBHOOK_URL.split(',');
 const EGG_WEBHOOK_URL = process.env.EGG_WEBHOOK_URL.split(',');
 const DISCORD_ROLE_ID = process.env.DISCORD_ROLE_ID ? `<@&${process.env.DISCORD_ROLE_ID}>` : '';
-const TIMEZONE = process.env.TIMEZONE || 'UTC';
-
-const CHECK_INTERVAL = parseInt(process.env.CHECK_INTERVAL) || 300000;
+const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '0 6-22 * * *'; // Default: every hour from 6:00 to 22:00
 
 const EVENT_NOTIFIED_FILE = './logs/notified_events.txt';
 const RAID_NOTIFIED_FILE = './logs/notified_raid.txt';
@@ -114,11 +113,11 @@ async function fetchEggData() {
 }
 
 function getCurrentFormattedTime() {
-    return moment().tz(TIMEZONE).format('HH:mm');
+    return moment().format('HH:mm');
 }
 
 function formatDate(dateString) {
-    return moment(dateString).tz(TIMEZONE).format('ddd D MMM HH:mm');
+    return moment(dateString).format('ddd D MMM HH:mm');
 }
 
 async function fetchDescriptionFromLink(link) {
@@ -299,20 +298,20 @@ async function checkAndSendEvents() {
     const eventData = await fetchEventData();
     if (!eventData) return;
 
-    const currentTime = moment().tz(TIMEZONE);
+    const currentDate = moment().format('YYYY-MM-DD');
 
     for (const event of eventData) {
-        const eventStartTime = moment(event.start).tz(TIMEZONE);
-        const eventEndTime = moment(event.end).tz(TIMEZONE);
+        const eventStartDate = moment(event.start).format('YYYY-MM-DD');
+        const eventEndDate = moment(event.end).format('YYYY-MM-DD');
 
         console.log(`Checking event: ${event.name}`);
-        console.log(`Event Start: ${eventStartTime.format('ddd D MMM HH:mm')}`);
-        console.log(`Event End: ${eventEndTime.format('ddd D MMM HH:mm')}`);
-        console.log(`Current Time: ${currentTime.format('ddd D MMM HH:mm')}`);
+        console.log(`Event Start: ${eventStartDate}`);
+        console.log(`Event End: ${eventEndDate}`);
+        console.log(`Current Date: ${currentDate}`);
         console.log(`Event ID: ${event.eventID}`);
         console.log(`Notified Event IDs: ${Array.from(notifiedEventIDs).join(', ')}`);
 
-        if (!notifiedEventIDs.has(event.eventID) && currentTime.isBetween(eventStartTime, eventEndTime, 'minute', '[]')) {
+        if (!notifiedEventIDs.has(event.eventID) && (eventStartDate <= currentDate && currentDate <= eventEndDate)) {
             notifiedEventIDs.add(event.eventID);
             const description = await fetchDescriptionFromLink(event.link);
             await sendEventNotification({ ...event, description });
@@ -360,11 +359,15 @@ function scheduleCheck() {
     checkAndSendEvents();
     checkAndNotifyRaids();
     checkAndNotifyEggs();
-    setInterval(() => {
-        checkAndSendEvents();
-        checkAndNotifyRaids();
-        checkAndNotifyEggs();
-    }, CHECK_INTERVAL);
+
+    cron.schedule(CRON_SCHEDULE, () => {
+        const currentHour = moment().hour();
+        if (currentHour >= 6 && currentHour <= 22) {
+            checkAndSendEvents();
+            checkAndNotifyRaids();
+            checkAndNotifyEggs();
+        }
+    });
 }
 
 scheduleCheck();
