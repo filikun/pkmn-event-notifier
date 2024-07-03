@@ -43,7 +43,7 @@ function loadPreviousRaidData() {
     try {
         if (fs.existsSync(RAID_NOTIFIED_FILE)) {
             const data = fs.readFileSync(RAID_NOTIFIED_FILE, 'utf8');
-            previousRaidData = JSON.parse(data) || [];
+            previousRaidData = data ? JSON.parse(data) : [];
         }
     } catch (error) {
         console.error('Error loading previous raid data:', error);
@@ -59,7 +59,7 @@ function loadPreviousEggData() {
     try {
         if (fs.existsSync(EGG_NOTIFIED_FILE)) {
             const data = fs.readFileSync(EGG_NOTIFIED_FILE, 'utf8');
-            previousEggData = JSON.parse(data) || [];
+            previousEggData = data ? JSON.parse(data) : [];
         }
     } catch (error) {
         console.error('Error loading previous egg data:', error);
