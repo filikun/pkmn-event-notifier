@@ -300,13 +300,10 @@ async function checkAndSendEvents() {
     if (!eventData) return;
 
     const currentTime = moment().tz(TIMEZONE);
-    const currentHour = currentTime.hours();
 
     for (const event of eventData) {
         const eventStartTime = moment(event.start).tz(TIMEZONE);
         const eventEndTime = moment(event.end).tz(TIMEZONE);
-        const startHour = eventStartTime.hours();
-        const endHour = eventEndTime.hours();
 
         console.log(`Checking event: ${event.name}`);
         console.log(`Event Start: ${eventStartTime.format('ddd D MMM HH:mm')}`);
@@ -315,7 +312,7 @@ async function checkAndSendEvents() {
         console.log(`Event ID: ${event.eventID}`);
         console.log(`Notified Event IDs: ${Array.from(notifiedEventIDs).join(', ')}`);
 
-        if (!notifiedEventIDs.has(event.eventID) && (startHour === currentHour || (startHour < currentHour && currentHour < endHour))) {
+        if (!notifiedEventIDs.has(event.eventID) && currentTime.isBetween(eventStartTime, eventEndTime, 'minute', '[]')) {
             notifiedEventIDs.add(event.eventID);
             const description = await fetchDescriptionFromLink(event.link);
             await sendEventNotification({ ...event, description });
