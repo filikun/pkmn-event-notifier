@@ -226,11 +226,25 @@ async function sendRaidNotification(raidData) {
         `).join('\n\n');
     };
 
+    const formatColumns = (col1, col2) => {
+        const maxRows = Math.max(col1.length, col2.length);
+        const rows = [];
+        for (let i = 0; i < maxRows; i++) {
+            const col1Item = col1[i] || '';
+            const col2Item = col2[i] || '';
+            rows.push(`${col1Item} ${col2Item}`);
+        }
+        return rows.join('\n');
+    };
+
     const embed = {
         title: 'New Raid Bosses',
         fields: [
-            { name: '**Tier 1**', value: formatTierRaids(tier1Raids).slice(0, 1024) || 'No Tier 1 raids', inline: false },
-            { name: '**Tier 3**', value: formatTierRaids(tier3Raids).slice(0, 1024) || 'No Tier 3 raids', inline: false },
+            {
+                name: '**Tier 1** - **Tier 3**',
+                value: formatColumns(formatTierRaids(tier1Raids).split('\n'), formatTierRaids(tier3Raids).split('\n')).slice(0, 1024) || 'No Tier 1 or Tier 3 raids',
+                inline: false
+            },
             { name: '**Tier 5**', value: formatDetailedRaids(tier5Raids).slice(0, 1024) || 'No Tier 5 raids', inline: false },
             { name: '**Mega Raids**', value: formatDetailedRaids(megaRaids).slice(0, 1024) || 'No Mega raids', inline: false },
         ],
@@ -263,13 +277,34 @@ async function sendEggNotification(eggData) {
         return eggs.map(egg => `${egg.name}${egg.canBeShiny ? ' ✨' : ''}${egg.isRegional ? ' 🌍' : ''} (CP ${egg.combatPower.min} - ${egg.combatPower.max})`).join('\n');
     };
 
-    const embedFields = Object.keys(eggsByType).map(type => {
-        return {
-            name: type,
-            value: formatEggs(eggsByType[type]).slice(0, 1024) || `No ${type} eggs`,
+    const formatColumns = (col1, col2) => {
+        const maxRows = Math.max(col1.length, col2.length);
+        const rows = [];
+        for (let i = 0; i < maxRows; i++) {
+            const col1Item = col1[i] || '';
+            const col2Item = col2[i] || '';
+            rows.push(`${col1Item} ${col2Item}`);
+        }
+        return rows.join('\n');
+    };
+
+    const embedFields = [
+        {
+            name: '**2km** - **5km**',
+            value: formatColumns(formatEggs(eggsByType['2 km'] || []).split('\n'), formatEggs(eggsByType['5 km'] || []).split('\n')).slice(0, 1024) || 'No 2km or 5km eggs',
             inline: false
-        };
-    });
+        },
+        {
+            name: '**7km** - **10km**',
+            value: formatColumns(formatEggs(eggsByType['7 km'] || []).split('\n'), formatEggs(eggsByType['10 km'] || []).split('\n')).slice(0, 1024) || 'No 7km or 10km eggs',
+            inline: false
+        },
+        {
+            name: '**12km**',
+            value: formatEggs(eggsByType['12 km'] || []).slice(0, 1024) || 'No 12km eggs',
+            inline: false
+        }
+    ];
 
     const embed = {
         title: 'New Egg Pool',
@@ -303,13 +338,6 @@ async function checkAndSendEvents() {
     for (const event of eventData) {
         const eventStartDate = moment(event.start).format('YYYY-MM-DD');
         const eventEndDate = moment(event.end).format('YYYY-MM-DD');
-
-        console.log(`Checking event: ${event.name}`);
-        console.log(`Event Start: ${eventStartDate}`);
-        console.log(`Event End: ${eventEndDate}`);
-        console.log(`Current Date: ${currentDate}`);
-        console.log(`Event ID: ${event.eventID}`);
-        console.log(`Notified Event IDs: ${Array.from(notifiedEventIDs).join(', ')}`);
 
         if (!notifiedEventIDs.has(event.eventID) && (eventStartDate <= currentDate && currentDate <= eventEndDate)) {
             notifiedEventIDs.add(event.eventID);
@@ -361,12 +389,9 @@ function scheduleCheck() {
     checkAndNotifyEggs();
 
     cron.schedule(CRON_SCHEDULE, () => {
-        const currentHour = moment().hour();
-        if (currentHour >= 6 && currentHour <= 22) {
-            checkAndSendEvents();
-            checkAndNotifyRaids();
-            checkAndNotifyEggs();
-        }
+        checkAndSendEvents();
+        checkAndNotifyRaids();
+        checkAndNotifyEggs();
     });
 }
 
