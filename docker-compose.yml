@@ -12,8 +12,8 @@ services:
       - EGG_WEBHOOK_URL=<INSERT_EGG_WEBHOOK_URL>
     restart: always    
     volumes:
-      - /opt/discordbot/.env:/usr/src/app/.env
+      - /opt/pkmn-event-notifier/.env:/usr/src/app/.env
       - /etc/localtime:/etc/localtime:ro
-      - /opt/discordbot/logs/:/usr/src/app/logs
+      - /opt/pkmn-event-notifier/logs/:/usr/src/app/logs
     security_opt:
       - no-new-privileges:true
