@@ -34,7 +34,7 @@ sh
 docker pull ghcr.io/filikun/pkmn-event-notifier:latest
 ```
 ### Configure the Docker Compose File
-
+```
 version: '3.5'
 services:
   pkmn-event-notifier:
@@ -53,7 +53,7 @@ services:
       - /opt/pkmn-event-notifier/logs/:/usr/src/app/logs
     security_opt:
       - no-new-privileges:true
-
+```
 ## Configuration
 
 ### Environment Variables
