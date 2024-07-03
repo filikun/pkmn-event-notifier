@@ -312,6 +312,8 @@ async function checkAndSendEvents() {
         console.log(`Event Start: ${eventStartTime.format('ddd D MMM HH:mm')}`);
         console.log(`Event End: ${eventEndTime.format('ddd D MMM HH:mm')}`);
         console.log(`Current Time: ${currentTime.format('ddd D MMM HH:mm')}`);
+        console.log(`Event ID: ${event.eventID}`);
+        console.log(`Notified Event IDs: ${Array.from(notifiedEventIDs).join(', ')}`);
 
         if (!notifiedEventIDs.has(event.eventID) && (startHour === currentHour || (startHour < currentHour && currentHour < endHour))) {
             notifiedEventIDs.add(event.eventID);
