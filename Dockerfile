@@ -9,4 +9,4 @@ RUN  apk update \
   && apk add --no-cache nodejs npm \
   && npm install
 
-CMD node eventwatcher.js
+CMD node pkmn-event-notifier.js
