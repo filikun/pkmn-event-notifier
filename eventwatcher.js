@@ -18,23 +18,23 @@ const EVENT_JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/d
 const RAID_JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/raids.json';
 const EGG_JSON_URL = 'https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/eggs.json';
 
-let notifiedEvents = new Set();
+let notifiedEventIDs = new Set();
 let previousRaidData = [];
 let previousEggData = [];
 
-function loadNotifiedEvents() {
+function loadNotifiedEventIDs() {
     try {
         if (fs.existsSync(EVENT_NOTIFIED_FILE)) {
             const data = fs.readFileSync(EVENT_NOTIFIED_FILE, 'utf8');
-            notifiedEvents = new Set(data.trim().split('\n'));
+            notifiedEventIDs = new Set(data.trim().split('\n'));
         }
     } catch (error) {
         console.error('Error loading notified events:', error);
     }
 }
 
-function saveNotifiedEvents() {
-    const data = Array.from(notifiedEvents).join('\n');
+function saveNotifiedEventIDs() {
+    const data = Array.from(notifiedEventIDs).join('\n');
     fs.writeFileSync(EVENT_NOTIFIED_FILE, data, 'utf8');
 }
 
@@ -314,13 +314,13 @@ async function checkAndSendEvents() {
         const startHour = Math.floor(new Date(event.start).getTime() / CHECK_INTERVAL);
         const endHour = Math.floor(new Date(event.end).getTime() / CHECK_INTERVAL);
 
-        if (!notifiedEvents.has(event.name) && (startHour === currentHour || (startHour < currentHour && currentHour < endHour))) {
-            notifiedEvents.add(event.name);
+        if (!notifiedEventIDs.has(event.eventID) && (startHour === currentHour || (startHour < currentHour && currentHour < endHour))) {
+            notifiedEventIDs.add(event.eventID);
             const description = await fetchDescriptionFromLink(event.link);
             await sendEventNotification({ ...event, description });
         }
     }
-    saveNotifiedEvents();
+    saveNotifiedEventIDs();
 }
 
 async function checkAndNotifyRaids() {
@@ -356,7 +356,7 @@ async function checkAndNotifyEggs() {
 }
 
 function scheduleCheck() {
-    loadNotifiedEvents();
+    loadNotifiedEventIDs();
     loadPreviousRaidData();
     loadPreviousEggData();
     checkAndSendEvents();
