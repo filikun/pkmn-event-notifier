@@ -74,3 +74,4 @@ services:
 Once deployed, the container will run according to the specified cron schedule, checking for updates and sending notifications to the configured Discord webhooks.
 
 
+###  Fetching from [Leek Duck](https://leekduck.com/) using [ScrapeDuck](https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json).
