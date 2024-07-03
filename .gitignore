@@ -3,3 +3,5 @@ events.json
 node_modules
 package-lock.json
 logs/notified_events.txt
+logs/notified_egg.txt
+logs/notified_raid.txt
